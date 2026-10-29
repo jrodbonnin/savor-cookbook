@@ -1,0 +1,16 @@
+node_modules/
+.next/
+out/
+.env*
+*.tsbuildinfo
+.DS_Store
+
+.pnpm-store/
+
+# Deployment settings, logs, and private credentials
+.vercel/
+coverage/
+*.log
+*.pem
+*.key
+.aws/
