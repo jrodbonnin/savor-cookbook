@@ -1,0 +1,8 @@
+# Keep the auth UI's transitive API-key plugin aligned with Better Auth.
+# Savor uses custom forms; the SDK currently includes its UI dependencies.
+overrides:
+  '@better-auth/api-key': 1.7.6
+  better-call: 1.4.0
+# core-js's optional postinstall message is not needed to run the library.
+allowBuilds:
+  core-js: false
