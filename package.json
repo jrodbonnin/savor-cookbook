@@ -6,7 +6,8 @@
     "dev": "next dev --webpack",
     "build": "next build --webpack",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:access": "node --test tests/demo-policy.test.mjs"
   },
   "dependencies": {
     "@neondatabase/auth": "0.6.0-beta",

@@ -72,3 +72,17 @@ Live API checks exercised signup, persistent HttpOnly cookies, protected dashboa
 `vercel.json` explicitly uses pnpm for installs and builds. Add the public Vercel domain to Neon Auth’s trusted domains if sign-up or login returns `INVALID_ORIGIN` (Neon Console → Auth → Configuration → Domains). Localhost is automatically allowed. An environment change applies to the next deployment.
 
 Stop and resolve failures before pushing. No automatic approval for future releases is implied.
+
+## Class demo account and future Premium access
+
+The class demo account exists in the existing Neon Auth database. It signs in at `/login` using the credentials supplied privately by the project owner. The account was created through normal Neon Auth signup, and its row in `neon_auth.user` was checked using a read-only query. Its password is not stored in this repository. Sign-in was tested through the production login form without email verification; no global verification settings or existing users were changed. The email ownership flag was not falsified.
+
+`SAVOR_DEMO_USER_ID` identifies this account by its immutable Neon user ID. It is configured in ignored `.env.local` and in the existing Vercel Development and Production environments. It must never have a `NEXT_PUBLIC_` prefix. The Vercel setting applies to the next deployment; the newly added access code remains local until an approved push.
+
+`lib/access/server.ts` is the server-only entry point for entitlements. It revalidates the current session, then grants the configured demo user `plan: premium`, `source: demo`, and `hasPremiumAccess: true`. Anonymous visitors, other user IDs, and missing configuration default to free. Email addresses, names, profile fields, request parameters, and client-submitted roles are not used for authorization. A client can see its entitlement at `/api/account/access`; that response is private and not cached. It cannot change the entitlement.
+
+Future Premium server actions and API routes must call `requirePremiumAccess()` before accessing Premium data or services. Client-side badges or hidden buttons are never sufficient enforcement. The server function accepts no caller-supplied identity. Run `pnpm test:access` to check the identity policy.
+
+When Stripe is implemented, add server-side subscription records linked to the same immutable Neon user ID. Populate them through signature-verified, idempotent Stripe webhooks and handle renewals, cancellations, and payment failures according to the product's policy. Extend `getCurrentEntitlements()` to grant subscription access to regular paying users while retaining the explicit demo grant. Never let Stripe webhook processing overwrite the demo grant, and never create a fake checkout, payment, customer, or subscription for this account. The current code makes no Stripe calls and does not pretend a payment occurred.
+
+The demo grant means full application Premium access, not administrator rights or access to other users' private data. Existing data ownership and authorization checks must still apply. No Premium product features exist yet; the entitlement is the foundation for protecting them when added.
