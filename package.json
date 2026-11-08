@@ -9,7 +9,10 @@
     "typecheck": "tsc --noEmit",
     "test:access": "node --test tests/demo-policy.test.mjs",
     "db:migrate": "node scripts/migrate.mjs",
-    "test:recipes": "node --experimental-strip-types --test tests/recipes-schema.test.mjs"
+    "test:recipes": "node --experimental-strip-types --test tests/recipes-schema.test.mjs",
+    "stripe:portal-setup": "node scripts/setup-stripe-portal.mjs",
+    "test:billing": "node --test tests/billing.test.mjs",
+    "stripe:listen": "node scripts/stripe-listen.mjs"
   },
   "dependencies": {
     "@neondatabase/auth": "0.6.0-beta",
@@ -19,6 +22,7 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "server-only": "^0.0.1",
+    "stripe": "^23.1.0",
     "zod": "4.5.4"
   },
   "devDependencies": {

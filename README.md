@@ -1,6 +1,6 @@
 # Savor — College SaaS project
 
-Savor is built with Next.js, TypeScript, and Tailwind CSS. Savor includes real Neon Auth accounts, persistent sessions, and a protected cookbook dashboard. Text-to-recipe importing uses the OpenAI Responses API, with editable drafts and permanent private recipe storage in the existing Neon database. Video-link importing, meal planning, grocery lists, and payments are not implemented yet.
+Savor is built with Next.js, TypeScript, and Tailwind CSS. Savor includes real Neon Auth accounts, persistent sessions, and a protected cookbook dashboard. Text-to-recipe importing uses the OpenAI Responses API, with editable drafts and permanent private recipe storage in the existing Neon database. Video-link importing, meal planning, and grocery lists are not implemented yet. Stripe Sandbox membership checkout and verified subscription access are implemented locally; see STRIPE_SETUP.md for registration and deployment steps.
 
 ## Preview on your computer
 
@@ -83,7 +83,7 @@ The class demo account exists in the existing Neon Auth database. It signs in at
 
 Future Premium server actions and API routes must call `requirePremiumAccess()` before accessing Premium data or services. Client-side badges or hidden buttons are never sufficient enforcement. The server function accepts no caller-supplied identity. Run `pnpm test:access` to check the identity policy.
 
-When Stripe is implemented, add server-side subscription records linked to the same immutable Neon user ID. Populate them through signature-verified, idempotent Stripe webhooks and handle renewals, cancellations, and payment failures according to the product's policy. Extend `getCurrentEntitlements()` to grant subscription access to regular paying users while retaining the explicit demo grant. Never let Stripe webhook processing overwrite the demo grant, and never create a fake checkout, payment, customer, or subscription for this account. The current code makes no Stripe calls and does not pretend a payment occurred.
+Stripe Sandbox subscription records are now linked to the immutable Neon user ID and populated by signature-verified, idempotent webhooks. `getCurrentEntitlements()` grants access to active paid subscriptions while retaining the explicit demo grant first. Webhook processing never overwrites that grant. The demo account never creates a Stripe checkout, customer, payment, or subscription; ordinary subscribers use real Stripe Sandbox objects. See STRIPE_SETUP.md for the failed-payment and cancellation policy.
 
 The demo grant means full application Premium access, not administrator rights or access to other users' private data. Existing data ownership and authorization checks must still apply. No Premium product features exist yet; the entitlement is the foundation for protecting them when added.
 
@@ -126,7 +126,7 @@ Keep `DATABASE_URL` and `OPENAI_API_KEY` configured in Vercel for each deploymen
 
 `lib/recipes/repository.ts` is server-only. All reads and writes are parameterized and include the owner ID from a freshly validated Neon session. An update with another user's recipe ID returns 404 and cannot change that row. The API's strict schemas reject client-supplied owner IDs. The application schema revokes PUBLIC privileges; database credentials are never sent to the browser. Ownership is enforced by the server's scoped queries, not by client-side filtering or a claim that the database-owner connection provides per-user row-level security.
 
-For this first version, text imports are available to authenticated accounts under the same cost limits. Existing Premium entitlements are preserved. Stripe billing and feature-tier restrictions will be implemented separately with the existing server-side access checks.
+For this first version, text imports are available to authenticated accounts under the same cost limits. Existing Premium entitlements are preserved. Stripe Sandbox billing now uses the existing server-side entitlement checks; feature-tier restrictions remain a separate product decision and have not been applied to the existing recipe importer.
 
 ### Checks
 
@@ -136,3 +136,10 @@ For this first version, text imports are available to authenticated accounts und
 - `scripts/check-recipes.mjs`: opt-in live integration check requiring `RUN_RECIPE_CHECKS=yes`, `SAVOR_TEST_EMAIL`, and `SAVOR_TEST_PASSWORD` in the process environment. It makes one real AI call, saves a real test recipe, and creates one separate isolation test identity. It tests origin/input rejection, cached retries, cooldown, saved/reopened edits, and denied cross-account reads/lists/updates. Run only with explicit approval; no passwords are embedded in the script and no users are deleted.
 
 Do not push until the owner has tested and approved this feature. After deployment, test the public importer, database ownership, and limits again against that environment before sharing it with classmates.
+
+
+## Stripe Sandbox membership
+
+See [STRIPE_SETUP.md](./STRIPE_SETUP.md) for the exact public webhook URL and event list, private local signing-secret handling, Sandbox portal setup, and test instructions. The test-only $7.99 monthly plan is displayed on the homepage, dashboard, and `/billing`. Signed webhook notifications synchronize verified subscription access in Neon; the demo's immutable-ID grant remains separate. Existing free recipe features and AI cost protections remain available.
+
+Before approving deployment, add the public destination's `STRIPE_WEBHOOK_SECRET` privately to Vercel Production. The local CLI secret is not the public secret. The Sandbox Price and portal are configured and billing tables are prepared in the currently connected database. Run `pnpm db:migrate` for any separately connected database that has not received the billing migration. No real payments are supported by this version.
