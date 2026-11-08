@@ -7,15 +7,19 @@
     "build": "next build --webpack",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test:access": "node --test tests/demo-policy.test.mjs"
+    "test:access": "node --test tests/demo-policy.test.mjs",
+    "db:migrate": "node scripts/migrate.mjs",
+    "test:recipes": "node --experimental-strip-types --test tests/recipes-schema.test.mjs"
   },
   "dependencies": {
     "@neondatabase/auth": "0.6.0-beta",
+    "@neondatabase/serverless": "^1.2.0",
     "lucide-react": "^0.468.0",
     "next": "^16.0.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "server-only": "^0.0.1"
+    "server-only": "^0.0.1",
+    "zod": "4.5.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.0.0",

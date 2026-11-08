@@ -15,6 +15,9 @@ importers:
       '@neondatabase/auth':
         specifier: 0.6.0-beta
         version: 0.6.0-beta(e03c4cafbef537b54d84c6ec53fbd756)
+      '@neondatabase/serverless':
+        specifier: ^1.2.0
+        version: 1.2.0
       lucide-react:
         specifier: ^0.468.0
         version: 0.468.0(react@19.3.1)
@@ -30,6 +33,9 @@ importers:
       server-only:
         specifier: ^0.0.1
         version: 0.0.1
+      zod:
+        specifier: 4.5.4
+        version: 4.5.4
     devDependencies:
       '@tailwindcss/postcss':
         specifier: ^4.0.0
@@ -549,6 +555,10 @@ packages:
         optional: true
       react-dom:
         optional: true
+
+  '@neondatabase/serverless@1.2.0':
+    resolution: {integrity: sha512-tnaqgixUengZQNd9ZrS3ytQfamJzLKY8QxgqWQTNHHtB+KrFQWk77JTbbpg4RD+J3qE4eO2lVytvGDX5Kj6FdQ==}
+    engines: {node: '>=19.0.0'}
 
   '@next/env@16.4.3':
     resolution: {integrity: sha512-a7tz1QCcWWkwC/rPJcPMJk/UNRu9CFhDd3OHYE5hddbJrs8BqRTalxI6GlKCWEGzRLHN+S/B7a4PAHCtm25aBQ==}
@@ -2523,6 +2533,8 @@ snapshots:
       - vitest
       - vue
       - yup
+
+  '@neondatabase/serverless@1.2.0': {}
 
   '@next/env@16.4.3': {}
 

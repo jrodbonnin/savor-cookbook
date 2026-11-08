@@ -1,6 +1,6 @@
 # Savor — College SaaS project
 
-Savor is built with Next.js, TypeScript, and Tailwind CSS. Week 2 adds real email/password accounts through the existing Neon Auth instance, persistent sessions, and a protected cookbook dashboard. Recipe imports, meal planning, grocery lists, and payments are not implemented yet.
+Savor is built with Next.js, TypeScript, and Tailwind CSS. Savor includes real Neon Auth accounts, persistent sessions, and a protected cookbook dashboard. Text-to-recipe importing uses the OpenAI Responses API, with editable drafts and permanent private recipe storage in the existing Neon database. Video-link importing, meal planning, grocery lists, and payments are not implemented yet.
 
 ## Preview on your computer
 
@@ -86,3 +86,53 @@ Future Premium server actions and API routes must call `requirePremiumAccess()` 
 When Stripe is implemented, add server-side subscription records linked to the same immutable Neon user ID. Populate them through signature-verified, idempotent Stripe webhooks and handle renewals, cancellations, and payment failures according to the product's policy. Extend `getCurrentEntitlements()` to grant subscription access to regular paying users while retaining the explicit demo grant. Never let Stripe webhook processing overwrite the demo grant, and never create a fake checkout, payment, customer, or subscription for this account. The current code makes no Stripe calls and does not pretend a payment occurred.
 
 The demo grant means full application Premium access, not administrator rights or access to other users' private data. Existing data ownership and authorization checks must still apply. No Premium product features exist yet; the entitlement is the foundation for protecting them when added.
+
+
+## Text-to-recipe importing (first AI feature)
+
+### Try it locally
+
+1. Run `pnpm dev` in this folder and keep the terminal open.
+2. Open **http://localhost:3000/dashboard** and log in.
+3. Paste a caption, transcript, or recipe description (40–6,000 characters). A video URL alone is not supported.
+4. Select **Organize with AI**. This sends the source text to OpenAI and makes a real paid API request.
+5. Review the title, ingredients, quantities, steps, cooking time, and notes. **AI inferred** labels identify estimates or added details; inferred flags can be corrected during review. Missing amounts remain **Quantity not stated**. Labels are not a guarantee of factual accuracy.
+6. Edit anything that needs correction, then select **Save to my cookbook**.
+7. Refresh the page and open the recipe's card. Saved recipes and their original text are stored in Neon for that account. **Edit recipe** lets you update it without another AI call.
+
+The first end-to-end check retained a tomato-pasta test recipe in the demo cookbook and one separate **Savor recipe isolation check** auth identity. The browser check also saved an editable pasta example in the project owner's cookbook. No existing users were deleted or modified.
+
+### Private setup and migrations
+
+The `OPENAI_API_KEY` was downloaded from the existing Vercel Development connection and appended privately to `.env.local`; existing database, session-signing, and demo ID values were preserved. The key is used only by `lib/recipes/extract.ts` on the server. Do not use a `NEXT_PUBLIC_` variable or place API keys in source code.
+
+If a future Vercel secret cannot be downloaded, open `.env.local` in your editor and add an `OPENAI_API_KEY` entry with the value copied directly from your OpenAI dashboard. Paste it only into that ignored file, save, and restart `pnpm dev`. Never paste it into chat or commit it. Do not replace the rest of the file.
+
+Run `pnpm db:migrate` before deploying the feature to a database that has not been prepared. It runs `migrations/001_recipes.sql` against the existing `DATABASE_URL`, creating the `savor` schema and three tables with indexes. It is non-destructive and repeatable; it does not create a database or touch Neon Auth tables. The migration has already been applied to the currently connected database. Build does not run migrations automatically. Node 26 is used for local verification and by the existing Vercel project.
+
+Keep `DATABASE_URL` and `OPENAI_API_KEY` configured in Vercel for each deployment environment. Existing Neon Auth settings and the immutable demo ID remain required. This feature has not been pushed or deployed by the assistant.
+
+### Usage and cost protections
+
+- A verified Neon session is required for every recipe endpoint. Save/import requests also require the same browser origin and bounded JSON bodies.
+- The model is pinned to `gpt-4.1-mini-2025-04-14` using `POST /v1/responses`, strict JSON-schema output, no tools, `store: false`, a 45-second timeout, and at most 3,500 output tokens. Source text is limited to 6,000 characters. No automatic provider retries are performed.
+- Each account has **5 attempts per UTC day**, with **30 seconds** between attempts. All accounts share **30 attempts per UTC day**. These are atomically reserved in Neon, so server restarts and concurrent Vercel instances do not reset the budget. Shared demo credentials share one per-account limit. Premium access does not disable cost controls.
+- Failures and conservative budget reservations count toward attempts. User counters can be reserved even when the global limit prevents a call; no API call is then made. Credits and OpenAI project limits still apply independently.
+- Import request IDs provide retry protection. Repeating the same ID/text returns its cached successful draft without another paid call. A pending request does not trigger another call. Generating again after changing the source or starting a new attempt can incur another charge.
+- Draft outputs, input hashes, and request status are stored to support this protection. Original source text is stored with a recipe only when the user saves. A retention/cleanup policy for old import records can be added later; no automatic data deletion is enabled.
+- API failures return safe, actionable errors without exposing provider payloads, cookies, source text, database connection strings, or API keys in logs. API responses are private and not cached.
+
+### Ownership and Premium behavior
+
+`lib/recipes/repository.ts` is server-only. All reads and writes are parameterized and include the owner ID from a freshly validated Neon session. An update with another user's recipe ID returns 404 and cannot change that row. The API's strict schemas reject client-supplied owner IDs. The application schema revokes PUBLIC privileges; database credentials are never sent to the browser. Ownership is enforced by the server's scoped queries, not by client-side filtering or a claim that the database-owner connection provides per-user row-level security.
+
+For this first version, text imports are available to authenticated accounts under the same cost limits. Existing Premium entitlements are preserved. Stripe billing and feature-tier restrictions will be implemented separately with the existing server-side access checks.
+
+### Checks
+
+- `pnpm test:recipes`: input, recipe-schema, and conservative provenance tests using Node's TypeScript support (Node 22.6+; verified on Node 26).
+- `pnpm test:access`: existing demo entitlement regression tests.
+- `pnpm typecheck` and `pnpm build`: TypeScript and production checks.
+- `scripts/check-recipes.mjs`: opt-in live integration check requiring `RUN_RECIPE_CHECKS=yes`, `SAVOR_TEST_EMAIL`, and `SAVOR_TEST_PASSWORD` in the process environment. It makes one real AI call, saves a real test recipe, and creates one separate isolation test identity. It tests origin/input rejection, cached retries, cooldown, saved/reopened edits, and denied cross-account reads/lists/updates. Run only with explicit approval; no passwords are embedded in the script and no users are deleted.
+
+Do not push until the owner has tested and approved this feature. After deployment, test the public importer, database ownership, and limits again against that environment before sharing it with classmates.
