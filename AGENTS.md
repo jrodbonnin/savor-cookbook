@@ -10,7 +10,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## Savor deployment workflow
 
-- Use pnpm 11.25.0 and the committed lockfile.
+- Use pnpm 11.22.0 and the committed lockfile.
 - Test changes locally, including the relevant user flow, TypeScript, and a production build.
 - Push to the existing GitHub main branch only after the user approves the tested feature. Approval for one release does not authorize future pushes.
 - Use the existing jrodbonnin/savor-cookbook repository and linked Vercel project; do not create replacements.

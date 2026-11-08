@@ -24,15 +24,15 @@
     "tailwindcss": "^4.0.0",
     "typescript": "^5.7.0"
   },
-  "packageManager": "pnpm@11.25.0",
+  "packageManager": "pnpm@11.22.0",
   "engines": {
     "node": ">=20.9.0",
-    "pnpm": "11.25.0"
+    "pnpm": "11.22.0"
   },
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
-      "version": "11.25.0",
+      "version": "11.22.0",
       "onFail": "error"
     }
   }

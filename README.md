@@ -6,7 +6,7 @@ Savor is built with Next.js, TypeScript, and Tailwind CSS. Week 2 adds real emai
 
 1. Install the **LTS version of Node.js** from https://nodejs.org if you don't already have it. Close and reopen your terminal after installing.
 2. Open this project folder in your terminal. In VS Code, open the folder and select **Terminal → New Terminal**.
-3. Run `npm install --global pnpm@11.25.0` once to install our package manager. This only installs the pnpm tool; it does not install the website dependencies.
+3. Run `npm install --global pnpm@11.22.0` once to install our package manager. This only installs the pnpm tool; it does not install the website dependencies.
 4. Run `pnpm install --frozen-lockfile` to download the packages the website needs (only required the first time, or when dependencies change).
 5. Run `pnpm dev` to start the local preview.
 6. Open http://localhost:3000 in your browser. If the terminal shows a different port, use that address instead.
@@ -15,7 +15,7 @@ Leave the terminal running while previewing. Saving changes updates the page aut
 
 ## Why pnpm?
 
-Use **pnpm 11.25.0** for this project. The committed `pnpm-lock.yaml` records the tested dependency versions. Do not run `npm install` inside this project or create a second lockfile. Mixing npm with the pnpm-created `node_modules` caused npm to crash while processing linked dependencies. `package.json` now declares the package manager, and modern npm will stop early if used accidentally.
+Use **pnpm 11.22.0** for this project. The committed `pnpm-lock.yaml` records the tested dependency versions. Do not run `npm install` inside this project or create a second lockfile. Mixing npm with the pnpm-created `node_modules` caused npm to crash while processing linked dependencies. `package.json` now declares the package manager, and modern npm will stop early if used accidentally.
 
 The Vite warnings from that failed npm attempt came from dependency development tools. Savor uses Next.js, and Vite is not required. Keep `pnpm-lock.yaml` in Git so another computer and Vercel can install the same versions.
 
