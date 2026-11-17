@@ -138,6 +138,40 @@ For this first version, text imports are available to authenticated accounts und
 Do not push until the owner has tested and approved this feature. After deployment, test the public importer, database ownership, and limits again against that environment before sharing it with classmates.
 
 
+## Google sign-in
+
+Savor sends Google sign-in through Managed Better Auth on the existing Neon integration. Neon handles the Google callback, and the Next.js SDK exchanges the verifier for a session before Savor sends the user to the dashboard. Savor does not link users by email or move data between user IDs.
+
+### Test on an isolated Neon branch
+
+1. Select an isolated development branch in Neon. Confirm that your local `NEON_AUTH_BASE_URL` and `DATABASE_URL` both point to that branch. Leave the live branch's auth settings alone while testing.
+2. In that branch's **Settings → Auth → OAuth providers**, add Google. Neon offers shared Google credentials for development. Under the branch's trusted domains, check that localhost is allowed.
+3. Add `SAVOR_GOOGLE_AUTH_ENABLED=true` to the ignored `.env.local` file and restart `pnpm dev`. Open [localhost:3000/signup](http://localhost:3000/signup) in a regular browser tab.
+4. Use a Google account whose email is absent from the branch. Confirm that signup opens the dashboard, a refresh preserves the session, logout blocks access to the dashboard, and **Continue with Google** on the login page returns to the same Neon user ID and cookbook.
+5. Use disposable test identities to check email collisions. Try a Google account with the same email as an unverified password account. The Google sign-in must be rejected without a new user, linked credential, or session. This rejection was confirmed on the testing branch with the original user ID and three saved recipes retained.
+6. Existing password accounts should continue using their password. **Connect Google** is disabled, and GET/POST requests to `/api/auth/link-social` return 403 before contacting Neon. Testing the SDK's `linkSocial()` flow on `google-auth-test` reached Neon's hosted callback with `Invalid state format`. The user and recipe records remained intact.
+7. Verify regular password login, saved recipes, and the demo entitlement separately. A fresh Google signup was verified in Neon as one new user with a separate ID, a Google provider, and an empty cookbook. Session refresh, logout, and returning Google login still need their remaining live checks. Chrome's existing Google session may be reused automatically, so use a private window when testing a different Google identity.
+
+The failure matches Neon's reports about [linking through a same-origin proxy](https://github.com/neondatabase/neon-js/issues/181) and [raw hosted callback errors](https://github.com/neondatabase/neon-js/issues/194). The upstream Better Auth `linkSocial()` API exists, but this managed shared-credentials/proxy combination has not passed the linking flow. Re-enable explicit linking only after a supported fix is verified on the testing branch. Savor does not construct, rewrite, or bypass OAuth state or relax state-cookie validation.
+
+### Before enabling in production
+
+Leave `SAVOR_GOOGLE_AUTH_ENABLED` unset in Vercel Production until the production provider is configured and the collision tests pass. Neon's documented settings do not expose Better Auth's `disableImplicitLinking` switch. The app flag blocks Savor's Google entry point, while Neon controls linking at its hosted OAuth callback. Explicit account linking remains blocked by Savor's API.
+
+When ready, create a **Web application** OAuth client in Google Cloud. Register the exact Google callback URL displayed in the Neon provider dialog. It ends with `/callback/google` on the branch's Neon Auth URL. Paste the Client ID and Client Secret directly into that dialog. Keep the credentials in Neon. In Google's Testing mode, add the test Google account under **Audience → Test users**. Publish the Google consent screen when ready for public use, and complete verification if Google requires it.
+
+Confirm the public Savor origin is trusted by that Neon branch. Set the nonsecret `SAVOR_GOOGLE_AUTH_ENABLED=true` variable in Vercel Production only after the safety checks and deployment approval.
+
+For this project, use the existing Neon **main** branch and trust `https://savor-cookbook-delta.vercel.app` with no trailing slash. That trusted origin was present during the release review. Google on main still used shared development credentials, so configure an application-owned Google OAuth client in that branch before public launch. Publish Google's consent screen for public users, or list every permitted tester while it is in Testing mode.
+
+In the existing Vercel project's **Production** environment, verify that `DATABASE_URL` and `NEON_AUTH_BASE_URL` both reference main. Retain `NEON_AUTH_COOKIE_SECRET`, the main-branch demo user's immutable `SAVOR_DEMO_USER_ID`, and the existing OpenAI and Stripe variables. Set only the Google enable flag after approval. Keep local development on `google-auth-test`. Production values were reviewed through metadata, without downloading secrets or changing settings.
+
+### Framework security baseline
+
+Next.js is pinned to `16.4.5`, the first patch for the two cache-disclosure advisories [GHSA-mfr8-8qww-v76h](https://github.com/vercel/next.js/security/advisories/GHSA-mfr8-8qww-v76h) and [GHSA-vc7v-qv4w-wrv8](https://github.com/vercel/next.js/security/advisories/GHSA-vc7v-qv4w-wrv8). The upgrade from `16.4.3` preserves the existing React and Neon SDK versions and pnpm `11.22.0`. Use `pnpm install --frozen-lockfile` to reproduce the verified dependency set.
+
+See [Neon's OAuth setup](https://neon.com/docs/auth/guides/setup-oauth) and the [Better Auth account-linking advisory](https://github.com/better-auth/better-auth/security/advisories/GHSA-g38m-r43w-p2q7). Run `pnpm test:auth` for the local app's OAuth policy tests.
+
 ## Stripe Sandbox membership
 
 See [STRIPE_SETUP.md](./STRIPE_SETUP.md) for the exact public webhook URL and event list, private local signing-secret handling, Sandbox portal setup, and test instructions. The test-only $7.99 monthly plan is displayed on the homepage, dashboard, and `/billing`. Signed webhook notifications synchronize verified subscription access in Neon; the demo's immutable-ID grant remains separate. Existing free recipe features and AI cost protections remain available.

@@ -3,11 +3,12 @@ import { redirect } from 'next/navigation';
 import { getAuth } from '@/lib/auth/server';
 import { AuthShell } from '@/components/auth-shell';
 import { AuthForm } from '@/components/auth-form';
+import { googleAuthEnabled, googleAuthError } from '@/lib/auth/google';
 export const metadata: Metadata = { title: 'Log in — Savor' };
 export const dynamic = 'force-dynamic';
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ verified?: string; logout?: string }> }) {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ verified?: string; logout?: string; google?: string; error?: string }> }) {
   const { data, error } = await getAuth().getSession();
   if (!error && data?.user) redirect('/dashboard');
   const params = await searchParams;
-  return <AuthShell>{params.verified && <p className="account-message" role="status">Your email is verified. Log in to continue.</p>}{params.logout && <p className="account-message" role="status">You’re logged out. See you in the kitchen soon.</p>}<AuthForm mode="login"/></AuthShell>;
+  return <AuthShell>{params.verified && <p className="account-message" role="status">Your email is verified. Log in to continue.</p>}{params.logout && <p className="account-message" role="status">You’re logged out. See you in the kitchen soon.</p>}<AuthForm mode="login" googleEnabled={googleAuthEnabled(process.env.SAVOR_GOOGLE_AUTH_ENABLED)} googleError={googleAuthError(params.google, params.error)}/></AuthShell>;
 }
